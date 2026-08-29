@@ -1,0 +1,23 @@
+artifact_path: /home/khaja/aiops-assignment1/mlruns/1/models/m-d15d98ca6cd5495ba9c193a9be17576a/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.10.21
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: pickle
+    sklearn_version: 1.7.2
+    skops_trusted_types: null
+mlflow_version: 3.15.2
+model_id: m-d15d98ca6cd5495ba9c193a9be17576a
+model_size_bytes: 1692801
+model_uuid: m-d15d98ca6cd5495ba9c193a9be17576a
+prompts: null
+run_id: 7764eb955eb44e9a994ce440a12369fd
+utc_time_created: '2026-08-29 07:27:23.638341'
