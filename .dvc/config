@@ -1,4 +1,4 @@
 [core]
     remote = myremote
 ['remote "myremote"']
-    url = /tmp/dvc_remote
+    url = ssh://khaja@10.252.48.235/home/khaja/dvc_remote
