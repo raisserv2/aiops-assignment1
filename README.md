@@ -85,4 +85,4 @@ python train.py --lr 0.001 --hidden "256,128" --epochs 20 --batch_size 200 --see
 
 ## Demo Video
 
-[Link to demo video](TODO_INSERT_LINK_HERE)
+[Link to demo video](https://drive.google.com/file/d/19PUov1A76tkPlwJKJnNMJAPfDAGp_iOK/view?usp=sharing)
