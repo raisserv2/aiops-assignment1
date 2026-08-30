@@ -2,13 +2,10 @@
 
 \usepackage[margin=2cm]{geometry}
 \usepackage{titlesec}
-\usepackage{enumitem}
 \usepackage{booktabs}
 \usepackage{array}
 \usepackage{parskip}
 \usepackage[T1]{fontenc}
-
-
 \usepackage{xcolor}
 \usepackage{fancyhdr}
 
@@ -16,8 +13,6 @@
 
 \titleformat{\section}{\normalsize\bfseries\color{sectionblue}}{\thesection.}{0.4em}{}
 \titlespacing*{\section}{0pt}{6pt}{2pt}
-\titleformat{\subsection}{\small\bfseries}{}{0em}{}
-\titlespacing*{\subsection}{0pt}{3pt}{1pt}
 
 \pagestyle{fancy}
 \fancyhf{}
@@ -42,17 +37,17 @@
 
 \section{Technical Debt Diagnosis}
 
-\textbf{(a) Entanglement (CACE):} Modifying the delivery-time feature's rounding logic unexpectedly degraded the unrelated favorite-restaurants feature. In ML systems, the learned weight matrix couples all input features, so changing one feature's preprocessing shifts the model's behavior on unrelated outputs.
+\textbf{(a) Entanglement (CACE):} Modifying the delivery-time feature's rounding logic unexpectedly degraded the unrelated favorite-restaurants feature. In ML models, the weight matrix couples all input features together, so changing one feature's preprocessing shifts behavior on unrelated outputs.
 
-\textbf{(b) Undeclared Consumers:} The marketing team was silently reading the model's raw output table without the ML team's knowledge, creating an invisible downstream dependency. Any schema or distribution change by the ML team would break the marketing pipeline without warning.
+\textbf{(b) Undeclared Consumers:} The marketing team was silently reading the model's raw output table without the ML team knowing. This creates an invisible dependency. Any change to the output schema or score distribution by the ML team would break marketing's pipeline without warning.
 
-\textbf{(c) Configuration and Glue-Code Debt (Pipeline Jungle):} The training pipeline is a chain of 14 undocumented shell scripts with no orchestration tool. No parameterization, no reproducibility, and tribal knowledge is required to operate it.
+\textbf{(c) Glue-Code Debt (Pipeline Jungle):} 14 undocumented shell scripts with no orchestration. No parameterization, no reproducibility, and tribal knowledge is needed to run it.
 
-\textbf{Mitigation for (c):} Replace the shell scripts with an \textbf{MLflow Project}. An \texttt{MLproject} file defines named entry points with declared parameters and types, paired with a \texttt{python\_env.yaml} for pinned dependencies. The pipeline becomes executable via \texttt{mlflow run .\ -P lr=0.01}, and each invocation auto-creates a tracked MLflow run, centralizing all parameters and metrics.
+\textbf{Mitigation for (c):} Replace the scripts with an MLflow Project. An \texttt{MLproject} file defines named entry points with declared parameters and types, and a \texttt{python\_env.yaml} pins dependencies. The pipeline becomes runnable via \texttt{mlflow run .\ -P lr=0.01}, and each run is auto-tracked in MLflow.
 
 \section{MLflow Experiment Comparison}
 
-Six experiments trained a two-layer MLP (sklearn \texttt{MLPClassifier}) on MNIST, varying learning rate and hidden layer architecture. All runs used \texttt{batch\_size=200}, \texttt{seed=42}, and 20 epochs.
+Six experiments trained a two-layer MLP (\texttt{MLPClassifier}) on MNIST, varying learning rate and hidden layer sizes. All runs used \texttt{batch\_size=200}, \texttt{seed=42}, and 20 epochs.
 
 \vspace{2pt}
 \begin{center}
@@ -72,22 +67,22 @@ Six experiments trained a two-layer MLP (sklearn \texttt{MLPClassifier}) on MNIS
 \end{center}
 \vspace{2pt}
 
-\textbf{Best run:} \texttt{lr=0.001} with hidden layers \texttt{(256, 128)}, achieving 97.51\% accuracy. The larger network capacity combined with a moderate learning rate produced the best generalization.
+\textbf{Best run:} \texttt{lr=0.001} with hidden layers \texttt{(256, 128)} at 97.51\% accuracy. Larger network with a moderate learning rate gave the best test performance.
 
-\textbf{Overfitting evidence:} Training loss decreased steadily from 0.39 to 0.01 across 20 epochs, while validation accuracy plateaued around epoch 5 at approximately 96.6\% and improved only marginally thereafter. This widening gap is a characteristic indicator of overfitting.
+\textbf{Overfitting:} Train loss dropped from 0.39 to 0.01 over 20 epochs, but validation accuracy flattened around epoch 5 at about 96.6\% and barely moved after that. The model kept fitting the training data without improving on unseen data.
 
-\textbf{Dominant hyperparameter:} Learning rate had the larger effect. Holding architecture constant at (128, 64), varying the learning rate caused up to a 1\% accuracy swing. Architecture changes showed a comparable range but with a smoother gradient across configurations.
+\textbf{Hyperparameter effect:} Learning rate had a bigger impact than architecture. Holding hidden layers at (128, 64), changing lr from 0.001 to 0.0001 dropped accuracy by about 1\%. Architecture changes across the same lr showed a similar range but the change was more gradual.
 
 \section{DVC Data Versioning and Rollback}
 
-DVC was initialized to track a CSV file of image filenames. Version 1 contained 1800 rows; after appending entries from a supplementary label set, version 2 contained 2801 rows. Both versions were pushed to an SSH-based DVC remote. Rollback was verified by running \texttt{git checkout v1} followed by \texttt{dvc checkout}, restoring the file to exactly 1800 rows (\texttt{wc -l}: 1801 including the header). Returning to \texttt{master} and executing \texttt{dvc checkout} restored version 2 (\texttt{wc -l}: 2802). This confirms that DVC's content-addressed storage correctly restores data files when the \texttt{.dvc} pointer is reverted.
+DVC tracked a CSV of image filenames. v1 had 1800 rows; after appending new entries, v2 had 2801 rows. Both versions were pushed to an SSH remote. To roll back, I ran \texttt{git checkout v1} then \texttt{dvc checkout}, which restored the file to exactly 1800 rows (\texttt{wc -l}: 1801 with header). Going back to \texttt{master} and running \texttt{dvc checkout} again restored v2 (\texttt{wc -l}: 2802). This shows DVC correctly restores data when the \texttt{.dvc} pointer file is reverted.
 
 \section{End-to-End Reproducibility}
 
-\textbf{Partner A:} Trained an MLP on the DVC-tracked MNIST dataset. Logged all parameters, the final accuracy metric (0.9782), and a \texttt{git\_commit} tag in MLflow. The training code and \texttt{.dvc} pointer were committed together in a single Git commit. The model was registered as \texttt{my-classifier} in the MLflow Model Registry and transitioned to \textit{Staging}.
+\textbf{Partner A:} Trained an MLP on DVC-tracked MNIST data. Logged all params (lr, hidden layers, epochs, batch size, seed), the final accuracy (0.9782), and a \texttt{git\_commit} tag in MLflow. Code and \texttt{.dvc} file were committed together. The model was registered as \texttt{my-classifier} and moved to Staging.
 
-\textbf{Partner B:} Cloned the repository, created the environment from \texttt{environment.yml}, pulled the dataset via DVC over SSH, and re-ran the training script. Achieved accuracy of 0.9784 (difference of 0.0002, within the 0.005 tolerance). The minor discrepancy is attributable to floating-point arithmetic differences across hardware. A reproducibility note confirming the match was logged in MLflow.
+\textbf{Partner B:} Cloned the repo, set up the env from \texttt{environment.yml}, pulled data via DVC SSH remote, and re-ran training. Got 0.9784 accuracy (diff of 0.0002 from Partner A's 0.9782, well within the 0.005 tolerance). The small difference comes from floating-point behavior on different hardware. A reproducibility note was logged in MLflow confirming the match.
 
-The full protocol (Git + DVC + MLflow + pinned environment) successfully enabled independent reproduction.
+The full protocol (Git + DVC + MLflow + pinned environment) worked as expected for independent reproduction.
 
 \end{document}
