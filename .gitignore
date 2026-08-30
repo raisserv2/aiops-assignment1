@@ -1,1 +1,4 @@
 /mnist_data.csv
+data.csv
+mlflow.db
+mlruns/
