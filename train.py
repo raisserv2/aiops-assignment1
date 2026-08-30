@@ -1,10 +1,10 @@
 import argparse
+import subprocess
 import mlflow
 from sklearn.neural_network import MLPClassifier
-from sklearn.datasets import fetch_openml
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
-import numpy as np
+import pandas as pd
 
 def main():
     parser = argparse.ArgumentParser()
@@ -17,10 +17,12 @@ def main():
 
     hidden_layers = tuple(int(x) for x in args.hidden.split(","))
 
-    # Load MNIST
-    print("Loading MNIST...")
-    X, y = fetch_openml("mnist_784", version=1, return_X_y=True, as_frame=False, parser="auto")
-    X = X / 255.0  # normalize
+    # Load MNIST from DVC-tracked local file
+    print("Loading MNIST from mnist_data.csv...")
+    df = pd.read_csv("mnist_data.csv")
+    X = df.drop(columns=["target"]).values / 255.0
+    y = df["target"].values
+
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, random_state=args.seed
     )
@@ -28,34 +30,34 @@ def main():
     mlflow.set_tracking_uri("http://localhost:5000")
     mlflow.set_experiment("mnist-mlp")
 
+    git_commit = subprocess.check_output(["git", "rev-parse", "HEAD"]).decode().strip()
+
     with mlflow.start_run(run_name=f"lr{args.lr}_h{args.hidden}_bs{args.batch_size}"):
         mlflow.log_param("learning_rate", args.lr)
         mlflow.log_param("hidden_layers", args.hidden)
         mlflow.log_param("max_epochs", args.epochs)
         mlflow.log_param("batch_size", args.batch_size)
         mlflow.log_param("seed", args.seed)
+        mlflow.set_tag("git_commit", git_commit)
 
         model = MLPClassifier(
             hidden_layer_sizes=hidden_layers,
             learning_rate_init=args.lr,
-            max_iter=1,          # we loop manually to log per-epoch
+            max_iter=args.epochs,
             batch_size=args.batch_size,
             random_state=args.seed,
-            warm_start=True,     # lets us loop epochs manually
         )
 
-        for epoch in range(1, args.epochs + 1):
-            model.fit(X_train, y_train)
-            train_loss = model.loss_
-            val_acc = accuracy_score(y_test, model.predict(X_test))
-            mlflow.log_metric("train_loss", train_loss, step=epoch)
-            mlflow.log_metric("val_accuracy", val_acc, step=epoch)
-            print(f"Epoch {epoch}: loss={train_loss:.4f} val_acc={val_acc:.4f}")
-
-        final_acc = accuracy_score(y_test, model.predict(X_test))
-        mlflow.log_metric("final_accuracy", final_acc)
-        mlflow.sklearn.log_model(model, "model", serialization_format="pickle")
-        print(f"Done. Final accuracy: {final_acc:.4f}")
+        model.fit(X_train, y_train)
+        acc = accuracy_score(y_test, model.predict(X_test))
+        mlflow.log_metric("final_accuracy", acc)
+        mlflow.sklearn.log_model(
+            model, "model",
+            serialization_format="pickle",
+            registered_model_name="my-classifier",
+        )
+        print(f"Done. Final accuracy: {acc:.4f}")
+        print(f"Git commit: {git_commit}")
 
 if __name__ == "__main__":
     main()
