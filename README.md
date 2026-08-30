@@ -1,6 +1,6 @@
 # AIOps Module 1 - Experiment Management & Reproducibility
 
-**Student:** Khaja Raisser (DA24B015)  
+**Myself:** Khaja 
 **Partner (Q4):** Mudda Manikanta Pruthvi Raj  
 **Repo:** `raisserv2/aiops-assignment1`
 
