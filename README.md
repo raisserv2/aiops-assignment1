@@ -1,4 +1,4 @@
-# AIOps Module 1 - Experiment Management & Reproducibility
+# AIOps Assignment 1
 
 **Myself:** Mohammed Khaja Ghouse Mohiuddin 
 **Partner (Q4):** Mudda Manikanta Pruthvi Raj  
