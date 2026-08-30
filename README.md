@@ -1,6 +1,6 @@
 # AIOps Module 1 - Experiment Management & Reproducibility
 
-**Myself:** Khaja 
+**Myself:** Mohammed Khaja Ghouse Mohiuddin 
 **Partner (Q4):** Mudda Manikanta Pruthvi Raj  
 **Repo:** `raisserv2/aiops-assignment1`
 
